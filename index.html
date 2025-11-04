@@ -2,17 +2,93 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coze 智能体聊天</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>失物招领小助手</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 确保Coze SDK生成的弹窗能完整显示 */
+        body > div {
+            overflow: visible !important;
+        }
+        
+        /* 修复弹窗显示不全的问题 - 缩小尺寸并强制居中且完整显示 */
+        [role="dialog"],
+        [class*="modal"],
+        [class*="popup"],
+        [class*="dialog"],
+        [class*="permission"],
+        [class*="Permission"],
+        div[class*="dialog"],
+        div[class*="modal"] {
+            overflow: visible !important;
+            max-width: min(350px, calc(100vw - 60px)) !important;
+            max-height: min(400px, calc(100vh - 60px)) !important;
+            position: fixed !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 999999 !important;
+        }
+        
+        /* 确保弹窗内容容器也能完整显示 */
+        [role="dialog"] > *,
+        [class*="modal"] > *,
+        [class*="popup"] > *,
+        [class*="dialog"] > *,
+        [class*="permission"] > * {
+            overflow: visible !important;
+            max-height: calc(100% - 80px) !important;
+        }
+        
+        /* 处理可能的滚动容器 */
+        [role="dialog"] [class*="scroll"],
+        [class*="modal"] [class*="scroll"],
+        [class*="dialog"] [class*="scroll"],
+        [class*="permission"] [class*="scroll"] {
+            overflow-y: auto !important;
+            max-height: calc(100% - 100px) !important;
+        }
+        
+        /* 确保加号按钮始终可用 */
+        button[class*="add"],
+        button[class*="new"],
+        [class*="add-button"],
+        [class*="new-button"],
+        [aria-label*="新"],
+        [aria-label*="添加"] {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
+        
+        button:disabled[class*="add"],
+        button:disabled[class*="new"] {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
     </style>
 </head>
 <body>
 
-   <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js"></script>
+<script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js"></script>
 <script>
-  let cozeWebSDK= new CozeWebSDK.WebChatClient({
+  let cozeWebSDK = new CozeWebSDK.WebChatClient({
     config: {
       bot_id: '7564306167162568745',
       isIframe: false,
@@ -28,41 +104,327 @@
         return 'sat_PQy8JNBdrsPCdri5LbGKTzgUk5ER15HvW4o49pfUtdA8odI1MOJ4qiT65hZU6jmf'
       }
     },
-      ui: {
-    base: {
-      icon: 'https://lf-coze-web-cdn.coze.cn/obj/coze-web-cn/obric/coze/favicon.1970.png',
-      layout: 'mobile',
-      zIndex: 1000,
+    ui: {
+      base: {
+        icon: 'https://lf-coze-web-cdn.coze.cn/obj/coze-web-cn/obric/coze/favicon.1970.png',
+        layout: 'mobile',
+        zIndex: 1000,
+      },
+      asstBtn: {
+        isNeed: false
+      },
+      header: {
+        isShow: true,
+        isNeedClose: false,
+      },
+      conversations: {
+        isNeed: false  
+      }
     },
-    asstBtn: {
-      isNeed: false // 展示悬浮球
-    },
-    header: {
-          isShow: true,
-          isNeedClose: false,
-       },
-     conversations: {
-    isNeed: false  
-  }
-
-  },
-    chatBot:{
+    chatBot: {
       isNeedAddNewConversation: true,
       title: "失物招领小助手",
-      width:500
+      width: 500
     },
-   
   });
 
-  window.onload=function(){
-    cozeWebSDK.showChatBot()
-  }
-  chatSDK.on("conversationCreated", (conversationId) => {
-  // 调用 API 更新会话名称（示例：使用用户第一条消息作为名称）
-  console.log("会话id",conversationId)
-  updateConversationName(conversationId, "用户的问题主题");
-});
+  window.onload = function() {
+    // 显示聊天机器人
+    cozeWebSDK.showChatBot();
+    
+    // 强化弹窗修复函数 - 确保弹窗完整显示且缩小尺寸
+    const fixPopupDisplay = () => {
+      // 查找所有可能的弹窗元素
+      const popups = document.querySelectorAll(
+        '[role="dialog"], ' +
+        '[class*="modal"], ' +
+        '[class*="popup"], ' +
+        '[class*="dialog"], ' +
+        '[class*="permission"], ' +
+        '[class*="Permission"], ' +
+        'div[class*="dialog"], ' +
+        'div[class*="modal"]'
+      );
+      
+      popups.forEach(popup => {
+        if (popup && popup.offsetParent !== null) { // 确保元素可见
+          // 强制居中显示
+          popup.style.position = 'fixed';
+          popup.style.left = '50%';
+          popup.style.top = '50%';
+          popup.style.transform = 'translate(-50%, -50%)';
+          popup.style.zIndex = '999999';
+          
+          // 确保弹窗可见
+          popup.style.overflow = 'visible';
+          popup.style.overflowX = 'visible';
+          popup.style.overflowY = 'visible';
+          
+          // 缩小弹窗尺寸，确保完整显示（使用更小的边距）
+          const maxWidth = Math.min(350, window.innerWidth - 60); // 最大宽度350px，但不超过屏幕宽度-60px
+          const maxHeight = Math.min(400, window.innerHeight - 60); // 最大高度400px，但不超过屏幕高度-60px
+          
+          popup.style.maxWidth = maxWidth + 'px';
+          popup.style.maxHeight = maxHeight + 'px';
+          popup.style.width = 'auto';
+          popup.style.height = 'auto';
+          
+          // 如果弹窗内容超出，允许内部滚动
+          const contentContainers = popup.querySelectorAll('[class*="content"], [class*="body"], [class*="scroll"]');
+          contentContainers.forEach(container => {
+            container.style.overflowY = 'auto';
+            container.style.maxHeight = (maxHeight - 80) + 'px';
+            container.style.overflowX = 'visible';
+          });
+          
+          // 确保弹窗的父容器不限制显示
+          let parent = popup.parentElement;
+          while (parent && parent !== document.body) {
+            const parentStyle = window.getComputedStyle(parent);
+            if (parentStyle.overflow === 'hidden' || 
+                parentStyle.overflowY === 'hidden' ||
+                parentStyle.position === 'relative' ||
+                parentStyle.position === 'absolute') {
+              parent.style.overflow = 'visible';
+              parent.style.overflowY = 'visible';
+            }
+            parent = parent.parentElement;
+          }
+        }
+      });
+    };
+    
+    // 修复加号按钮
+    const fixAddButton = () => {
+      const addButtons = document.querySelectorAll(
+        'button[class*="add"], ' +
+        'button[class*="new"], ' +
+        '[class*="add-button"], ' +
+        '[class*="new-button"], ' +
+        'button[aria-label*="新"], ' +
+        'button[aria-label*="添加"]'
+      );
+      
+      addButtons.forEach(button => {
+        if (button) {
+          button.disabled = false;
+          button.removeAttribute('disabled');
+          button.setAttribute('aria-disabled', 'false');
+          button.style.pointerEvents = 'auto';
+          button.style.opacity = '1';
+          button.style.cursor = 'pointer';
+        }
+      });
+    };
+    
+    // 监听语音按钮点击，在用户点击第二个按钮时请求权限
+    let voiceButtonClicked = false; // 标记是否已点击第一个语音按钮
+    
+    const setupVoiceButtonListener = () => {
+      // 查找语音相关按钮
+      const voiceButtons = document.querySelectorAll(
+        'button[class*="voice"], ' +
+        'button[class*="audio"], ' +
+        'button[class*="microphone"], ' +
+        'button[class*="mic"], ' +
+        'button[aria-label*="语音"], ' +
+        'button[aria-label*="录音"], ' +
+        '[class*="voice-button"], ' +
+        '[class*="audio-button"]'
+      );
+      
+      voiceButtons.forEach(button => {
+        // 移除旧的事件监听器，避免重复绑定
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function(e) {
+          console.log('语音按钮被点击');
+          
+          // 延迟检查，等待第二个按钮出现
+          setTimeout(() => {
+            // 查找可能是第二个按钮的元素（通常是录音/开始录音按钮）
+            const recordButtons = document.querySelectorAll(
+              'button[class*="record"], ' +
+              'button[class*="start"], ' +
+              'button[aria-label*="开始"], ' +
+              'button[aria-label*="录音"], ' +
+              '[class*="record-button"]'
+            );
+            
+            // 为第二个按钮添加点击监听
+            recordButtons.forEach(recordBtn => {
+              const shouldBind = !recordBtn.hasAttribute('data-permission-bound');
+              if (shouldBind) {
+                recordBtn.setAttribute('data-permission-bound', 'true');
+                
+                recordBtn.addEventListener('click', function(recordEvent) {
+                  console.log('录音按钮被点击，请求权限');
+                  
+                  // 检查是否在小程序 webview 环境中
+                  if (window.wx && window.wx.miniProgram) {
+                    // 小程序环境：先尝试调用 getUserMedia，失败后通过 postMessage 通知小程序
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                      navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(function(stream) {
+                          console.log('麦克风权限已授予');
+                          stream.getTracks().forEach(track => track.stop());
+                        })
+                        .catch(function(err) {
+                          console.log('webview内权限请求失败，通知小程序请求权限:', err);
+                          // 通过 postMessage 通知小程序请求权限
+                          try {
+                            window.wx.miniProgram.postMessage({
+                              data: {
+                                type: 'requestRecordPermission'
+                              }
+                            });
+                            console.log('已发送权限请求消息到小程序');
+                            
+                            // 由于 postMessage 可能延迟，也尝试通过其他方式触发
+                            setTimeout(() => {
+                              window.wx.miniProgram.postMessage({
+                                data: {
+                                  type: 'requestRecordPermission'
+                                }
+                              });
+                            }, 100);
+                          } catch (e) {
+                            console.error('发送消息失败:', e);
+                          }
+                        });
+                    } else {
+                      // 如果不支持 getUserMedia，直接发送消息
+                      try {
+                        window.wx.miniProgram.postMessage({
+                          data: {
+                            type: 'requestRecordPermission'
+                          }
+                        });
+                        console.log('已发送权限请求消息到小程序');
+                      } catch (e) {
+                        console.error('发送消息失败:', e);
+                      }
+                    }
+                  } else {
+                    // 浏览器环境：直接请求麦克风权限
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                      navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(function(stream) {
+                          console.log('麦克风权限已授予');
+                          stream.getTracks().forEach(track => track.stop());
+                        })
+                        .catch(function(err) {
+                          console.log('麦克风权限被拒绝:', err);
+                        });
+                    }
+                  }
+                }, { once: true });
+              }
+            });
+          }, 300);
+        });
+      });
+    };
+    
+    // 定期检查语音按钮（因为按钮可能是动态生成的）
+    setInterval(setupVoiceButtonListener, 1000);
+    
+    // 监听DOM变化，当新按钮出现时立即绑定
+    const voiceButtonObserver = new MutationObserver(() => {
+      setupVoiceButtonListener();
+    });
+    
+    voiceButtonObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    // 监听会话创建事件
+    if (typeof cozeWebSDK.on === 'function') {
+      cozeWebSDK.on('conversationCreated', (conversationId) => {
+        console.log('会话已创建，会话ID:', conversationId);
+        setTimeout(fixAddButton, 100);
+        setTimeout(fixAddButton, 500);
+        setTimeout(fixAddButton, 1000);
+        setTimeout(setupVoiceButtonListener, 500);
+      });
+      
+      cozeWebSDK.on('conversationSwitched', (conversationId) => {
+        console.log('切换到会话，会话ID:', conversationId);
+        setTimeout(fixAddButton, 100);
+        setTimeout(setupVoiceButtonListener, 500);
+      });
+    }
+    
+    // 定义权限请求回调函数（供小程序调用）
+    window.requestRecordPermissionSuccess = function() {
+      console.log('小程序端录音权限授权成功');
+      // 可以在这里触发录音相关操作
+    };
+    
+    window.requestRecordPermissionFail = function() {
+      console.log('小程序端录音权限授权失败');
+    };
+    
+    // 定期检查并修复
+    setInterval(() => {
+      fixPopupDisplay();
+      fixAddButton();
+    }, 300); // 更频繁的检查
+    
+    // 监听DOM变化
+    const observer = new MutationObserver((mutations) => {
+      let shouldFix = false;
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              if (node.matches && (
+                node.matches('[role="dialog"]') ||
+                node.matches('[class*="modal"]') ||
+                node.matches('[class*="popup"]') ||
+                node.matches('[class*="dialog"]') ||
+                node.matches('[class*="permission"]') ||
+                node.matches('button[class*="add"]') ||
+                node.matches('button[class*="new"]')
+              )) {
+                shouldFix = true;
+              }
+            }
+          });
+        }
+        if (mutation.type === 'attributes') {
+          shouldFix = true;
+        }
+      });
+      if (shouldFix) {
+        setTimeout(() => {
+          fixPopupDisplay();
+          fixAddButton();
+        }, 50);
+      }
+    });
+    
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['disabled', 'class', 'style', 'aria-disabled', 'position', 'overflow']
+    });
+    
+    // 页面大小变化时重新修复
+    window.addEventListener('resize', () => {
+      setTimeout(fixPopupDisplay, 100);
+    });
+    
+    // 滚动时检查弹窗位置
+    window.addEventListener('scroll', () => {
+      fixPopupDisplay();
+    }, true); // 捕获阶段
+  };
 </script>
 
 </body>
 </html>
+
