@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coze 智能体聊天</title>
+    <style>
+        
+    </style>
+</head>
+<body>
+
+   <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.19/libs/cn/index.js"></script>
+<script>
+  let cozeWebSDK= new CozeWebSDK.WebChatClient({
+    config: {
+      bot_id: '7564306167162568745',
+      isIframe: false,
+      type: 'bot'
+    },
+    componentProps: {
+      title: '失物招领小助手',
+    },
+    auth: {
+      type: 'token',
+      token: 'sat_PQy8JNBdrsPCdri5LbGKTzgUk5ER15HvW4o49pfUtdA8odI1MOJ4qiT65hZU6jmf',
+      onRefreshToken: function () {
+        return 'sat_PQy8JNBdrsPCdri5LbGKTzgUk5ER15HvW4o49pfUtdA8odI1MOJ4qiT65hZU6jmf'
+      }
+    },
+      ui: {
+    base: {
+      icon: 'https://lf-coze-web-cdn.coze.cn/obj/coze-web-cn/obric/coze/favicon.1970.png',
+      layout: 'mobile',
+      zIndex: 1000,
+    },
+    asstBtn: {
+      isNeed: false // 展示悬浮球
+    },
+    header: {
+          isShow: true,
+          isNeedClose: false,
+       },
+     conversations: {
+    isNeed: false  
+  }
+
+  },
+    chatBot:{
+      isNeedAddNewConversation: true,
+      title: "失物招领小助手",
+      width:500
+    },
+   
+  });
+
+  window.onload=function(){
+    cozeWebSDK.showChatBot()
+  }
+  chatSDK.on("conversationCreated", (conversationId) => {
+  // 调用 API 更新会话名称（示例：使用用户第一条消息作为名称）
+  console.log("会话id",conversationId)
+  updateConversationName(conversationId, "用户的问题主题");
+});
+</script>
+
+</body>
+</html>
