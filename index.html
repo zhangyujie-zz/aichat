@@ -95,7 +95,7 @@
       type: 'bot'
     },
     componentProps: {
-      title: '失物招领小助手',
+      title: '失物招领小助手', 
     },
     auth: {
       type: 'token',
@@ -218,8 +218,6 @@
     };
     
     // 监听语音按钮点击，在用户点击第二个按钮时请求权限
-    let voiceButtonClicked = false; // 标记是否已点击第一个语音按钮
-    
     const setupVoiceButtonListener = () => {
       // 查找语音相关按钮
       const voiceButtons = document.querySelectorAll(
@@ -235,95 +233,96 @@
       
       voiceButtons.forEach(button => {
         // 移除旧的事件监听器，避免重复绑定
-        const newButton = button.cloneNode(true);
-        button.parentNode.replaceChild(newButton, button);
-        
-        newButton.addEventListener('click', function(e) {
-          console.log('语音按钮被点击');
+        if (!button.hasAttribute('data-voice-listener-bound')) {
+          button.setAttribute('data-voice-listener-bound', 'true');
           
-          // 延迟检查，等待第二个按钮出现
-          setTimeout(() => {
-            // 查找可能是第二个按钮的元素（通常是录音/开始录音按钮）
-            const recordButtons = document.querySelectorAll(
-              'button[class*="record"], ' +
-              'button[class*="start"], ' +
-              'button[aria-label*="开始"], ' +
-              'button[aria-label*="录音"], ' +
-              '[class*="record-button"]'
-            );
+          button.addEventListener('click', function(e) {
+            console.log('语音按钮被点击');
             
-            // 为第二个按钮添加点击监听
-            recordButtons.forEach(recordBtn => {
-              const shouldBind = !recordBtn.hasAttribute('data-permission-bound');
-              if (shouldBind) {
-                recordBtn.setAttribute('data-permission-bound', 'true');
-                
-                recordBtn.addEventListener('click', function(recordEvent) {
-                  console.log('录音按钮被点击，请求权限');
+            // 延迟检查，等待第二个按钮出现
+            setTimeout(() => {
+              // 查找可能是第二个按钮的元素（通常是录音/开始录音按钮）
+              const recordButtons = document.querySelectorAll(
+                'button[class*="record"], ' +
+                'button[class*="start"], ' +
+                'button[aria-label*="开始"], ' +
+                'button[aria-label*="录音"], ' +
+                '[class*="record-button"]'
+              );
+              
+              // 为第二个按钮添加点击监听
+              recordButtons.forEach(recordBtn => {
+                const shouldBind = !recordBtn.hasAttribute('data-permission-bound');
+                if (shouldBind) {
+                  recordBtn.setAttribute('data-permission-bound', 'true');
                   
-                  // 检查是否在小程序 webview 环境中
-                  if (window.wx && window.wx.miniProgram) {
-                    // 小程序环境：先尝试调用 getUserMedia，失败后通过 postMessage 通知小程序
-                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                      navigator.mediaDevices.getUserMedia({ audio: true })
-                        .then(function(stream) {
-                          console.log('麦克风权限已授予');
-                          stream.getTracks().forEach(track => track.stop());
-                        })
-                        .catch(function(err) {
-                          console.log('webview内权限请求失败，通知小程序请求权限:', err);
-                          // 通过 postMessage 通知小程序请求权限
-                          try {
-                            window.wx.miniProgram.postMessage({
-                              data: {
-                                type: 'requestRecordPermission'
-                              }
-                            });
-                            console.log('已发送权限请求消息到小程序');
-                            
-                            // 由于 postMessage 可能延迟，也尝试通过其他方式触发
-                            setTimeout(() => {
+                  recordBtn.addEventListener('click', function(recordEvent) {
+                    console.log('录音按钮被点击，请求权限');
+                    
+                    // 检查是否在小程序 webview 环境中
+                    if (window.wx && window.wx.miniProgram) {
+                      // 小程序环境：先尝试调用 getUserMedia，失败后通过 postMessage 通知小程序
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ audio: true })
+                          .then(function(stream) {
+                            console.log('麦克风权限已授予');
+                            stream.getTracks().forEach(track => track.stop());
+                          })
+                          .catch(function(err) {
+                            console.log('webview内权限请求失败，通知小程序请求权限:', err);
+                            // 通过 postMessage 通知小程序请求权限
+                            try {
                               window.wx.miniProgram.postMessage({
                                 data: {
                                   type: 'requestRecordPermission'
                                 }
                               });
-                            }, 100);
-                          } catch (e) {
-                            console.error('发送消息失败:', e);
-                          }
-                        });
+                              console.log('已发送权限请求消息到小程序');
+                              
+                              // 由于 postMessage 可能延迟，也尝试通过其他方式触发
+                              setTimeout(() => {
+                                window.wx.miniProgram.postMessage({
+                                  data: {
+                                    type: 'requestRecordPermission'
+                                  }
+                                });
+                              }, 100);
+                            } catch (e) {
+                              console.error('发送消息失败:', e);
+                            }
+                          });
+                      } else {
+                        // 如果不支持 getUserMedia，直接发送消息
+                        try {
+                          window.wx.miniProgram.postMessage({
+                            data: {
+                              type: 'requestRecordPermission'
+                            }
+                          });
+                          console.log('已发送权限请求消息到小程序');
+                        } catch (e) {
+                          console.error('发送消息失败:', e);
+                        }
+                      }
                     } else {
-                      // 如果不支持 getUserMedia，直接发送消息
-                      try {
-                        window.wx.miniProgram.postMessage({
-                          data: {
-                            type: 'requestRecordPermission'
-                          }
-                        });
-                        console.log('已发送权限请求消息到小程序');
-                      } catch (e) {
-                        console.error('发送消息失败:', e);
+                      // 浏览器环境：直接请求麦克风权限
+                      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ audio: true })
+                          .then(function(stream) {
+                            console.log('麦克风权限已授予');
+                            stream.getTracks().forEach(track => track.stop());
+                          })
+                          .catch(function(err) {
+                            console.log('麦克风权限被拒绝:', err);
+                          });
                       }
                     }
-                  } else {
-                    // 浏览器环境：直接请求麦克风权限
-                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                      navigator.mediaDevices.getUserMedia({ audio: true })
-                        .then(function(stream) {
-                          console.log('麦克风权限已授予');
-                          stream.getTracks().forEach(track => track.stop());
-                        })
-                        .catch(function(err) {
-                          console.log('麦克风权限被拒绝:', err);
-                        });
-                    }
-                  }
-                }, { once: true });
-              }
-            });
-          }, 300);
-        });
+                  }, { once: true });
+                }
+              });
+            }, 300);
+          });
+        }
       });
     };
     
@@ -373,7 +372,7 @@
       fixAddButton();
     }, 300); // 更频繁的检查
     
-    // 监听DOM变化
+    // 监听DOM变化，当新弹窗出现时立即修复
     const observer = new MutationObserver((mutations) => {
       let shouldFix = false;
       mutations.forEach((mutation) => {
